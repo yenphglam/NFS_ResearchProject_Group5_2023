@@ -1,0 +1,214 @@
+---
+title: "Modeling"
+format: html
+---
+
+```{r message = FALSE}
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(broom)
+library(MASS)
+```
+
+
+```{r}
+mri_cleaned <- read.csv("C:\\Alzheimer Project\\original_data\\mri.csv")
+uds_cleaned <- read.csv("C:\\Alzheimer Project\\original_data\\uds.csv")
+mri_raw <- read.csv("C:\\Alzheimer Project\\original_data\\investigator_fcsf_nacc57.csv")
+uds_raw <- read.csv("C:\\Alzheimer Project\\original_data\\investigator_uds_baseline.csv")
+```
+
+
+```{r}
+data_cleaned <- uds_cleaned %>% inner_join(mri_cleaned, by = "NACCID")
+data_raw <- uds_raw %>% inner_join(mri_raw, by = "NACCID")
+```
+
+```{r}
+uds_cleaned <- uds_cleaned %>% mutate(NACCUDSD == as.factor(NACCUDSD),
+                                      SEX == as.factor(SEX))
+```
+
+
+__Explanatory Variables:__
+
+SEX - categorical
+
+NACCAGE - numerical
+
+EDUC - numerical
+
+__Response Variables:__
+
+NACCUDSD - categorical
+
+CDRSUM - numerical 
+
+MMSE - numerical 
+
+
+## Chi-square Test (SEX vs NACCUDSD)
+
+$H_0$ : There is no significant association between patients' gender and their cognitive status at USD visit
+
+$H_1$ : There is a significant association between patients' gender and their cognitive status at USD visit
+
+
+```{r echo = FALSE}
+sex_udsd_table <- table(uds_cleaned$NACCUDSD, uds_cleaned$SEX) %>% 
+  addmargins()
+sex_udsd_table
+```
+
+```{r echo = FALSE}
+chisq.test(sex_udsd_table)
+```
+
+ - p-value < significannce level of 0.05
+
+***We have sufficient evidence to conclude that there is a significant association between patients' gender and their cognitive status at UDS visit.*** 
+
+
+## ANOVA Test (NACCAGE VS NACCUDSD)
+
+$H_0$ : The average age of patients in four cognitive status groups are the same
+
+$H_1$ : There is at least one cognitive status group has different average age 
+
+```{r echo = FALSE}
+age_cogstat <- uds_cleaned %>% select(NACCUDSD, NACCAGE) %>% drop_na()
+
+mod_age_cogstat <- aov(NACCAGE ~ NACCUDSD, data = age_cogstat)
+summary(mod_age_cogstat)
+```
+
+- p_value < significance level of 0.05 
+
+
+```{r echo = FALSE}
+NACCUDSD_labs <- c("HC", "Impaired-not-MCI", "MCI", "AD")
+names(NACCUDSD_labs) <- c("1", "2", "3", "4")
+ggplot(uds_cleaned, aes(x = NACCAGE)) +
+  geom_density() +
+  facet_grid(NACCUDSD~., labeller = labeller(NACCUDSD = NACCUDSD_labs)) +
+  labs(title = "Distribution of age among different cognitive status groups")
+```
+
+The average age of patients with HC: 
+```{r echo = FALSE}
+HC <- uds_cleaned %>% filter(NACCUDSD == "1") %>% select(NACCUDSD, NACCAGE)
+round(mean(HC$NACCAGE), 2)
+```
+
+The average age of patients with Impaired-not-MCI:
+```{r echo = FALSE}
+Imp <- uds_cleaned %>% filter(NACCUDSD == "2") %>% select(NACCUDSD, NACCAGE)
+round(mean(Imp$NACCAGE), 2)
+```
+
+The average age of patients with MCI:
+```{r echo = FALSE}
+MCI <- uds_cleaned %>% filter(NACCUDSD == "3") %>% select(NACCUDSD, NACCAGE)
+round(mean(MCI$NACCAGE), 2)
+```
+
+The average age of patients with AD:
+```{r echo = FALSE}
+AD <- uds_cleaned %>% filter(NACCUDSD == "4") %>% select(NACCUDSD, NACCAGE)
+round(mean(AD$NACCAGE), 2)
+```
+
+***We have sufficient evidence to conclude that there is at least one cognitive status group has different mean in age*** 
+
+## ANOVA Test (EDUC VS NACCUDSD)
+
+$H_0$ : The average education years of subjects in four cognitive status are the same
+
+$H_1$ : There is at least one cognitive status has different average education years
+
+```{r echo = FALSE}
+edu_cogstat <- uds_cleaned %>% drop_na()
+
+mod_edu_cogstat <- aov(EDUC ~ NACCUDSD, data = edu_cogstat)
+summary(mod_edu_cogstat)
+```
+
+- p-value < significance of 0.05
+
+
+```{r echo = FALSE, message = FALSE, warning = FALSE}
+NACCUDSD_labs <- c("HC", "Impaired-not-MCI", "MCI", "AD")
+names(NACCUDSD_labs) <- c("1", "2", "3", "4")
+ggplot(uds_cleaned, aes(x = EDUC)) +
+  geom_histogram(col = "white", fill = "blue") +
+  facet_grid(NACCUDSD~., labeller = labeller(NACCUDSD = NACCUDSD_labs)) +
+  labs(title = "Distribution of education years among different cognitive status groups")
+```
+
+The average education years of patients with HC: 
+```{r echo = FALSE}
+HC <- uds_cleaned %>% filter(NACCUDSD == "1") %>% drop_na()
+round(mean(HC$EDUC), 0)
+```
+
+The average education years of patients with Impaired-not-MCI:
+```{r echo = FALSE}
+Imp <- uds_cleaned %>% filter(NACCUDSD == "2")  %>% drop_na()
+round(mean(Imp$EDUC), 0)
+```
+
+The average education years of patients with MCI:
+```{r echo = FALSE}
+MCI <- uds_cleaned %>% filter(NACCUDSD == "3")  %>% drop_na()
+round(mean(MCI$EDUC), 0)
+```
+
+The average education years of patients with AD:
+```{r echo = FALSE}
+AD <- uds_cleaned %>% filter(NACCUDSD == "4") %>% drop_na()
+round(mean(AD$EDUC), 0)
+```
+
+***We have sufficient evidence to conclude that there is at least one cognitive status group has different mean in education years*** 
+
+## Logistic Regression Model
+
+
+```{r}
+model_age <- polr(NACCUDSD ~ NACCAGE, data = uds_cleaned, Hess = TRUE)
+summary(model_age)
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+## Simple Linear Regression Model (NACCAGE VS CDRSUM)
+
+$R^2$ of model for Age (explanatory variable) and CDRSUM (response variable):
+
+```{r echo = FALSE}
+model_age_cdrsum <- lm(CDRSUM ~ NACCAGE, data = uds_cleaned)
+round(summary(model_age_cdrsum)$r.squared, 2)
+```
+
+
+$R^2$ of model for Age, Education (explanatory variable) and CDRSUM (response variable):
+
+```{r echo = FALSE}
+model_age_education <- lm(CDRSUM ~ NACCAGE + EDUC, data = uds_cleaned)
+round(summary(model_age_education)$r.squared, 2)
+```
+
+$R^2$ of model for Age, Education, Sex (explanatory variable) and CDRSUM (response variable):
+
+```{r echo = FALSE}
+model_age_education <- lm(CDRSUM ~ NACCAGE + EDUC + SEX, data = uds_cleaned)
+round(summary(model_age_education)$r.squared, 2)
+```
+
