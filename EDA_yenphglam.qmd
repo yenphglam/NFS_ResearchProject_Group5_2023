@@ -1,0 +1,388 @@
+---
+title: "EDA"
+format: html
+---
+
+```{r message = FALSE}
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+```
+
+DATA:
+
+NACCAGE
+
+EDUC
+
+SEX
+
+NACCUDSD
+
+```{r}
+mri_cleaned <- read.csv("C:\\Alzheimer Project\\original_data\\mri.csv")
+uds_cleaned <- read.csv("C:\\Alzheimer Project\\original_data\\uds.csv")
+mri_raw <- read.csv("C:\\Alzheimer Project\\original_data\\investigator_fcsf_nacc57.csv")
+uds_raw <- read.csv("C:\\Alzheimer Project\\original_data\\investigator_uds_baseline.csv")
+```
+
+
+```{r}
+data_cleaned <- uds_cleaned %>% inner_join(mri_cleaned, by = "NACCID")
+data_raw <- uds_raw %>% inner_join(mri_raw, by = "NACCID")
+```
+
+
+Distribution of Age: 
+
+```{r}
+ggplot(data=uds_cleaned, aes(x = NACCAGE)) +
+  geom_histogram(col = I("white"))
+```
+
+
+Distribution of Education:
+
+```{r}
+ggplot(data=uds_cleaned, aes(x = EDUC)) +
+  geom_histogram(col = I("white"))
+```
+
+Distribution of Sex:
+
+```{r}
+uds_cleaned %>% filter(SEX==1) %>% nrow()
+uds_cleaned %>% filter(SEX==2) %>% nrow()
+```
+
+
+```{r}
+ggplot(data=uds_cleaned, aes(x = "", fill = factor(SEX))) + 
+  geom_bar(width = 1) +
+  coord_polar(theta = "y") +
+  labs(title = "Distribution of Gender", 
+       fill = "Sex") +
+  scale_fill_discrete(labels = c("Male", "Female"))
+```
+
+1 = Male
+
+2 = Female
+
+Distribution of Cognitive Status at UDS visit:
+
+```{r}
+ggplot(data=uds_cleaned, aes(x = factor(NACCUDSD))) + 
+  geom_bar() +
+  labs(x = "Cognitive Status at UDS visit") +
+  theme_bw()
+```
+
+1 = Normal cognition 
+
+2 = Impaired-not-MCI 
+
+3 = MCI 
+
+4 = Dementia
+
+The association between age and sex:
+
+```{r}
+ggplot(data=uds_cleaned, aes(x = NACCAGE, y = factor(SEX))) +
+  geom_boxplot() +
+  labs(y = "Sex")
+```
+
+1 = Male
+
+2 = Female
+
+The association between age and education:
+
+```{r}
+ggplot(data=uds_cleaned, aes(x = NACCAGE, y = EDUC)) +
+  geom_point()
+```
+
+The association between sex and education: 
+
+```{r}
+ggplot(data=uds_cleaned, aes(x = factor(SEX), y = NACCAGE)) + 
+  geom_boxplot() +
+  labs(x = "Sex")
+```
+
+1 = Male
+
+2 = Female
+
+The relationship between age and cognitive status:
+
+```{r}
+ggplot(data=uds_cleaned, aes(x=NACCAGE, y =factor(NACCUDSD))) +
+  geom_boxplot() +
+  labs(y = "Cognitive Status at UDS visit")
+```
+
+1 = Normal cognition 
+
+2 = Impaired-not-MCI 
+
+3 = MCI 
+
+4 = Dementia
+
+Sex and cognitive status:
+
+```{r}
+ggplot(data=uds_cleaned, aes(x = factor(NACCUDSD), fill = factor(SEX))) +
+  geom_bar(position= "dodge") +
+  labs(x = "Cognitive Status at UDS visit", fill = "Sex") +
+  scale_x_discrete(labels = c("HC", "Impaired-not-MCI", "MCI", "AD")) +
+  scale_fill_discrete(labels = c("Male", "Female"))
+```
+
+1 = Normal cognition 
+
+2 = Impaired-not-MCI 
+
+3 = MCI 
+
+4 = Dementia
+
+Education and cognitive status:
+
+```{r}
+ggplot(data=uds_cleaned, aes(x = EDUC, y = factor(NACCUDSD))) + 
+  geom_boxplot() +
+  labs(x = "Years of Education", y = "Cognitive Status at UDS visit")
+```
+
+1 = Normal cognition 
+
+2 = Impaired-not-MCI 
+
+3 = MCI 
+
+4 = Dementia
+
+
+Age, Sex, and Cognitive Status: 
+
+```{r}
+ggplot(data=uds_cleaned, aes(x=NACCAGE, y =factor(NACCUDSD))) +
+  geom_boxplot() +
+  facet_grid(SEX~.) +
+  labs(y = "Cognitive Status at UDS visit") 
+```
+
+
+BEHAVIORAL SURVEY DATA: (cleaned data) 
+
+TRAVEL
+
+EVENTS 
+
+REMDATES
+
+MEALPREP
+
+SHOPPING
+
+BILLS
+
+PAYATTN
+
+TAXES
+
+STOVE
+
+
+
+```{r}
+ggplot(data=uds_cleaned, aes(x = factor(NACCUDSD), fill = factor(TRAVEL))) +
+  geom_bar(position = "dodge") +
+  labs(x = "Cognitive Status",
+       fill = "Travel Ability") +
+  scale_x_discrete(labels = c("HC", "Impaired-not-MCI", "MCI", "AD")) +
+  scale_fill_discrete(labels = c("Normal", "Has difficulty, but does by self","Requires assistance", "Dependent")) +
+  theme_bw()
+```
+
+1 = Normal cognition 
+
+2 = Impaired-not-MCI 
+
+3 = MCI 
+
+4 = Dementia
+
+```{r}
+ggplot(data=uds_cleaned, aes(x = factor(NACCUDSD), 
+                             fill = factor(EVENTS))) +
+  geom_bar(position = "dodge") +
+  labs(x = "Cognitive Status",
+       fill = "Ability to keep track of current events") +
+  scale_x_discrete(labels = c("HC", "Impaired-not-MCI", "MCI", "AD")) +
+  scale_fill_discrete(labels = c("Normal", "Has difficulty, but does by self","Requires assistance", "Dependent")) +
+  theme_bw()
+```
+
+1 = Normal cognition 
+
+2 = Impaired-not-MCI 
+
+3 = MCI 
+
+4 = Dementia
+
+```{r}
+ggplot(data=uds_cleaned, aes(x = factor(NACCUDSD), fill = factor(REMDATES))) +
+  geom_bar(position = "dodge") +
+  labs(x = "Cognitive Status",
+       fill = "Ability to remember dates") +
+  scale_x_discrete(labels = c("HC", "Impaired-not-MCI", "MCI", "AD")) +
+  scale_fill_discrete(labels = c("Normal", "Has difficulty, but does by self","Requires assistance", "Dependent")) +
+  theme_bw()
+```
+
+1 = Normal cognition 
+
+2 = Impaired-not-MCI 
+
+3 = MCI 
+
+4 = Dementia
+
+```{r}
+ggplot(data=uds_cleaned, aes(x = factor(NACCUDSD), fill = factor(MEALPREP))) +
+  geom_bar(position = "dodge") +
+  labs(x = "Cognitive Status",
+       fill = "Ability to prepare balanced meals") +
+  scale_x_discrete(labels = c("HC", "Impaired-not-MCI", "MCI", "AD")) +
+  scale_fill_discrete(labels = c("Normal", "Has difficulty, but does by self","Requires assistance", "Dependent")) +
+  theme_bw()
+```
+
+1 = Normal cognition 
+
+2 = Impaired-not-MCI 
+
+3 = MCI 
+
+4 = Dementia
+
+
+```{r}
+ggplot(data=uds_cleaned, aes(x = factor(NACCUDSD), fill = factor(SHOPPING))) +
+  geom_bar(position = "dodge") +
+  labs(x = "Cognitive Status",
+       fill = "Ability to buy groceries/go shopping") +
+  scale_x_discrete(labels = c("HC", "Impaired-not-MCI", "MCI", "AD")) +
+  scale_fill_discrete(labels = c("Normal", "Has difficulty, but does by self","Requires assistance", "Dependent")) +
+  theme_bw()
+```
+
+1 = Normal cognition 
+
+2 = Impaired-not-MCI 
+
+3 = MCI 
+
+4 = Dementia
+
+
+```{r}
+ggplot(data=uds_cleaned, aes(x = factor(NACCUDSD), 
+                             fill = factor(PAYATTN))) +
+  geom_bar(position = "dodge") +
+  labs(x = "Cognitive Status",
+       fill = "Ability to pay atttention") +
+  scale_x_discrete(labels = c("HC", "Impaired-not-MCI", "MCI", "AD")) +
+  scale_fill_discrete(labels = c("Normal", "Has difficulty, but does by self","Requires assistance", "Dependent")) +
+  theme_bw()
+```
+
+1 = Normal cognition 
+
+2 = Impaired-not-MCI 
+
+3 = MCI 
+
+4 = Dementia
+
+```{r}
+ggplot(data=uds_cleaned, aes(x = factor(NACCUDSD), 
+                             fill = factor(BILLS))) +
+  geom_bar(position = "dodge") +
+  labs(x = "Cognitive Status",
+       fill = "Ability to write checks/pay bills") +
+  scale_x_discrete(labels = c("HC", "Impaired-not-MCI", "MCI", "AD")) +
+  scale_fill_discrete(labels = c("Normal", "Has difficulty, but does by self","Requires assistance", "Dependent"))+
+  theme_bw()
+```
+
+```{r}
+ggplot(data=uds_cleaned, aes(x = factor(NACCUDSD), 
+                             fill = factor(TAXES))) +
+  geom_bar(position = "dodge") +
+  labs(x = "Cognitive Status",
+       fill = "Ability to do tax documents") +
+  scale_x_discrete(labels = c("HC", "Impaired-not-MCI", "MCI", "AD")) +
+  scale_fill_discrete(labels = c("Normal", "Has difficulty, but does by self","Requires assistance", "Dependent")) +
+  theme_bw()
+```
+
+1 = Normal cognition 
+
+2 = Impaired-not-MCI 
+
+3 = MCI 
+
+4 = Dementia
+
+
+```{r}
+ggplot(data=uds_cleaned, aes(x = factor(NACCUDSD), 
+                             fill = factor(STOVE))) +
+  geom_bar(position = "dodge") +
+  labs(x = "Cognitive Status",
+       fill = "Ability to heat water/
+       make coffee/
+       turn off the stove") +
+  scale_x_discrete(labels = c("HC", "Impaired-not-MCI", "MCI", "AD")) +
+  scale_fill_discrete(labels = c("Normal", "Has difficulty, but does by self","Requires assistance", "Dependent")) +
+  theme_bw()
+```
+
+1 = Normal cognition 
+
+2 = Impaired-not-MCI 
+
+3 = MCI 
+
+4 = Dementia
+
+
+```{r}
+ggplot(data=uds_cleaned, aes(x = factor(NACCUDSD), 
+                             fill = factor(GAMES))) +
+  geom_bar(position = "dodge") +
+  labs(x = "Cognitive Status",
+       fill = "Ability to play games/work on a hobby") +
+  scale_x_discrete(labels = c("HC", "Impaired-not-MCI", "MCI", "AD")) +
+  scale_fill_discrete(labels = c("Normal", "Has difficulty, but does by self","Requires assistance", "Dependent")) +
+  theme_bw()
+```
+
+1 = Normal cognition 
+
+2 = Impaired-not-MCI 
+
+3 = MCI 
+
+4 = Dementia
+
+
+
