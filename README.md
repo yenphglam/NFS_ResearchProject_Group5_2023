@@ -1,4 +1,4 @@
-# Exploring the Distinctions Between Mild Cognitive Impairment and Alzheimer's Disease
+# Exploring the Distinctions Between Two Final Stages in Alzheimer's Disease
 
 **Summer 2024 SoCal Data Science — Group 5**
 **Authors: Julia Eng, Kent Tran, Olivia Willard, Ted Yoon, Wesley Zeng, Yen Phuong Lam, Yvette Vargas**
