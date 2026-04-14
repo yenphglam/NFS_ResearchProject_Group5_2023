@@ -1,0 +1,150 @@
+---
+title: "Modeling with merged data"
+format: html
+---
+
+```{r message = FALSE}
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(broom)
+library(rsample)
+```
+
+
+```{r}
+mri_cleaned <- read.csv("original_data/data_cleaned/mri.csv")
+uds_cleaned <- read.csv("original_data/data_cleaned/uds.csv")
+mri_raw <- read.csv("original_data/data_raw/investigator_mri_nacc57.csv")
+uds_raw <- read.csv("original_data/data_raw/investigator_uds_baseline.csv")
+```
+
+
+```{r}
+data_cleaned <-full_join(uds_cleaned, mri_cleaned, join_by("NACCID"))
+data_raw <- full_join(uds_cleaned, mri_cleaned, join_by("NACCID"))
+```
+
+## Logistic Regression Model with MCI and AD:
+
+- Response variable has two possible outcomes: MCI or AD
+
+```{r}
+data_cleaned <- mutate(data_cleaned, MCI_AD = case_when(
+  NACCUDSD == 3 ~ 0,
+  NACCUDSD == 4 ~ 1))
+```
+
+```{r}
+model1_table <- data_cleaned %>% select(NACCAGE, SEX, EDUC, MCI_AD)
+```
+
+
+*Splitting data to get a better training result: *
+
+```{r}
+data_split <- rsample::initial_split(model1_table)
+```
+
+```{r}
+data_train <- rsample::training(data_split)
+```
+
+```{r}
+data_test <- rsample::testing(data_split)
+```
+
+# Age: 
+
+```{r echo = FALSE, results=FALSE}
+model1_age <- glm(MCI_AD ~ NACCAGE,
+               data = data_train,
+               family = binomial)
+model1_age
+```
+
+```{r echo = FALSE}
+model1_age <- glm(MCI_AD ~ NACCAGE,
+               data = data_test,
+               family = binomial)
+model1_age
+```
+# Education: 
+
+```{r echo = FALSE, results=FALSE}
+model1_educ <- glm(MCI_AD ~ EDUC,
+               data = data_train,
+               family = binomial)
+model1_educ
+```
+
+```{r echo = FALSE}
+model1_educ <- glm(MCI_AD ~ EDUC,
+               data = data_test,
+               family = binomial)
+model1_educ
+```
+
+# Sex 
+
+```{r echo = FALSE, results=FALSE}
+model1_sex <- glm(MCI_AD ~ SEX,
+               data = data_train,
+               family = binomial)
+model1_sex
+```
+
+```{r echo = FALSE}
+model1_sex <- glm(MCI_AD ~ SEX,
+               data = data_test,
+               family = binomial)
+model1_sex
+```
+
+# Education + Sex: 
+
+```{r echo = FALSE, results=FALSE}
+model1_educ_sex <- glm(MCI_AD ~ EDUC + SEX,
+               data = data_train,
+               family = binomial)
+model1_educ_sex
+```
+
+```{r echo = FALSE}
+model1_educ_sex <- glm(MCI_AD ~ EDUC + SEX,
+               data = data_test,
+               family = binomial)
+model1_educ_sex
+```
+
+# Education + Age: 
+
+```{r echo = FALSE, results=FALSE}
+model1_educ_sex <- glm(MCI_AD ~ EDUC + NACCAGE,
+               data = data_train,
+               family = binomial)
+model1_educ_sex
+```
+
+```{r echo = FALSE}
+model1_educ_sex <- glm(MCI_AD ~ EDUC + NACCAGE,
+               data = data_test,
+               family = binomial)
+model1_educ_sex
+```
+
+# Education + Sex + Age:
+
+```{r echo = FALSE, results=FALSE}
+model1_educ_sex_age <- glm(MCI_AD ~ EDUC + SEX + NACCAGE,
+               data = data_train,
+               family = binomial)
+model1_educ_sex_age
+```
+
+```{r echo = FALSE}
+model1_educ_sex_age <- glm(MCI_AD ~ EDUC + SEX + NACCAGE,
+               data = data_test,
+               family = binomial)
+model1_educ_sex_age
+```

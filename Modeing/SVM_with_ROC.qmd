@@ -1,0 +1,173 @@
+## load packages
+```{r}
+library(e1071)
+library(dplyr)
+library(ggplot2)
+library(stringr)
+library(tidyverse) 
+library(tidymodels) #Modeling
+library(ranger)
+library(probably)
+library(vip)
+library(yardstick)
+library(rpart.plot)
+library(caret)
+library(here)
+library(pROC)
+```
+
+## load datasets
+```{r}
+csf <- read_csv(here("csf.csv"))
+mri <- read_csv(here("mri.csv"))
+uds <- read_csv(here("uds.csv"))
+
+
+total <- left_join(uds,mri)
+masterset <- left_join(total, csf)
+
+```
+
+# select predictors
+```{r}
+predictors_df <- uds %>% 
+  select(SEX,
+          EDUC,
+          NACCAGE,
+          VEG,
+          ANIMALS,
+          TRAILA,
+          TRAILB,
+          CRAFTDRE,
+          MINTTOTS,
+          MEMPROB,
+          DROPACT,
+          WRTHLESS,
+          BETTER,
+          BORED,
+          HELPLESS,
+          TAXES,
+          BILLS,
+          REMDATES,
+          TRAVEL,
+          NACCUDSD,
+          MEALPREP,
+          GAMES) %>%
+  mutate(across(c(SEX,
+                  MEMPROB,
+                  DROPACT,
+                  WRTHLESS,
+                  BETTER,
+                  BORED,
+                  HELPLESS,
+                  TAXES,
+                  BILLS,
+                  REMDATES,
+                  TRAVEL,
+                  MEALPREP,
+                  GAMES), as.factor))
+```
+
+
+
+
+#create 2 separate datasets: HC and Not HC; MCI and AD
+
+```{r}
+HC_notHC_set <- predictors_df |>
+  filter(NACCUDSD == "1" | NACCUDSD == "3" | NACCUDSD == "4") |>
+  mutate(cog_stat = case_when(NACCUDSD == 1 ~ "HC",
+                              NACCUDSD == 3 ~ "Not HC",
+                              NACCUDSD == 4 ~ "Not HC")) |>
+  select(-NACCUDSD) |> na.omit()
+MCI_AD_set <- predictors_df |>
+  filter(NACCUDSD == "3" | NACCUDSD == "4") |>
+  mutate(cog_stat = case_when(NACCUDSD == 3 ~ "MCI",
+                              NACCUDSD == 4 ~ "AD")) |>
+  select(-NACCUDSD) |> na.omit()
+```
+
+```{r}
+# training and test set for HC_notHC_set
+set.seed(777)
+HC_notHC_split <- initial_split(HC_notHC_set, prop = 0.8)
+HC_notHC_train <- training(HC_notHC_split)
+HC_notHC_test <- testing(HC_notHC_split)
+```
+
+
+```{r}
+# training and test set for MCI_AD_set
+set.seed(777)
+MCI_AD_split <- initial_split(MCI_AD_set, prop = 0.8)
+MCI_AD_train <- training(MCI_AD_split)
+MCI_AD_test <- testing(MCI_AD_split)
+```
+
+```{r}
+svm1 <- svm(factor(cog_stat) ~ ., data = HC_notHC_train, 
+            kernel = "linear",
+            cost = 1,
+            scale = TRUE,
+            cross = 10,
+            tolerance = 1e-6,
+            probability = TRUE)
+
+```
+
+```{r}
+tune.out <- tune.svm(factor(cog_stat)~.,data = HC_notHC_train ,
+                      cost = 1^(-5:5),
+                     tunecontrol=tune.control(cross=10))
+tune.out$performances
+tune.out$best.parameters
+```
+
+
+
+```{r}
+preds <- predict(svm1, HC_notHC_test, probability = TRUE)
+prob_values <- attr(preds, "probabilities")[,2]  # Extracting probabilities for the positive class
+
+# Calculate the AUC using pROC
+roc_obj <- roc(HC_notHC_test$cog_stat, prob_values)
+auc_value <- auc(roc_obj)
+print(paste("AUC:", auc_value))
+```
+
+```{r}
+confusionMatrix(table(preds, HC_notHC_test$cog_stat))
+```
+
+```{r}
+svmfit2 <- svm(factor(cog_stat) ~ ., data = MCI_AD_train, kernel = "linear",
+               cost = 1,
+               scale = TRUE,
+               cross = 10,
+               tolerance = 1e-6,
+               probability = TRUE)
+```
+
+
+```{r}
+tune.out2 <- tune.svm(factor(cog_stat)~.,data = MCI_AD_train ,
+                      cost = 1^(-5:5),
+                     tunecontrol=tune.control())
+tune.out2$performances
+tune.out2$best.parameters
+```
+
+
+```{r}
+preds2 <- predict(svmfit2, MCI_AD_test, probability = TRUE)
+prob_values2 <- attr(preds2, "probabilities")[,2]  
+
+# Calculate the AUC using pROC
+roc_obj2 <- roc(MCI_AD_test$cog_stat, prob_values2)
+auc_value2 <- auc(roc_obj2)
+print(paste("AUC:", auc_value2))
+```
+
+```{r}
+confusionMatrix(table(preds2, MCI_AD_test$cog_stat))
+```
